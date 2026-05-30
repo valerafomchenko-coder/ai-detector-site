@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Humanly AI 3.3</title>
+<title>Humanly AI 3.5</title>
 
 <style>
 :root{
@@ -14,13 +14,7 @@
     --primary:#3b82f6;
     --danger:#ef4444;
     --green:#22c55e;
-}
-
-body.light{
-    --bg:#f1f5f9;
-    --card:#ffffff;
-    --text:#0f172a;
-    --muted:#475569;
+    --yellow:#f59e0b;
 }
 
 body{
@@ -28,7 +22,6 @@ body{
     font-family:Arial;
     background:var(--bg);
     color:var(--text);
-    transition:0.3s;
 }
 
 .container{
@@ -62,8 +55,8 @@ textarea{
 
 .panel{
     display:flex;
-    gap:10px;
     flex-wrap:wrap;
+    gap:10px;
     margin-top:12px;
 }
 
@@ -72,12 +65,16 @@ button{
     border:none;
     border-radius:10px;
     cursor:pointer;
-    background:var(--primary);
+    background:#334155;
     color:white;
     font-size:14px;
+    transition:0.2s;
 }
 
-button.secondary{ background:#334155; }
+button.active{
+    background:var(--primary);
+}
+
 button.danger{ background:var(--danger); }
 
 .card{
@@ -110,31 +107,6 @@ button.danger{ background:var(--danger); }
     font-size:14px;
     color:var(--muted);
 }
-
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.toast{
-    position:fixed;
-    bottom:20px;
-    left:50%;
-    transform:translateX(-50%);
-    background:#000;
-    color:white;
-    padding:10px 16px;
-    border-radius:10px;
-    opacity:0;
-    transition:0.3s;
-}
-.toast.show{ opacity:1; }
-
-.lang{
-    margin-left:10px;
-    background:#334155;
-}
 </style>
 </head>
 
@@ -142,135 +114,45 @@ button.danger{ background:var(--danger); }
 
 <div class="container">
 
-<div class="topbar">
-    <div>
-        <h1>Humanly AI 3.3</h1>
-        <div class="small">AI Detector + Explanation Engine</div>
-    </div>
-
-    <div>
-        <button class="secondary" onclick="toggleTheme()">🌙</button>
-        <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
-    </div>
-</div>
+<h1>Humanly AI 3.5</h1>
+<div class="small">AI Text Tool — Detect • Humanize • Improve</div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
 
-<div class="small" id="counter">0 символов | 0 слов</div>
-
 <div class="panel">
-    <button onclick="run()">Analyze</button>
-    <button class="danger" onclick="clearText()">Очистить</button>
-    <button class="secondary" onclick="copyResult()">Копировать</button>
-    <button class="secondary" onclick="pasteText()">Вставить</button>
+    <button id="b1" onclick="setMode('detect', this)">Detect AI</button>
+    <button id="b2" onclick="setMode('humanize', this)">Humanize</button>
+    <button id="b3" onclick="setMode('improve', this)">Improve</button>
+    <button class="danger" onclick="clearText()">Clear</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
-    <h2 id="resultTitle"></h2>
+    <h2 id="title"></h2>
     <div class="bar"><div class="fill" id="fill"></div></div>
-    <p id="resultText"></p>
-
+    <p id="result"></p>
     <div class="insights" id="insights"></div>
 </div>
 
 </div>
 
-<div class="toast" id="toast">OK</div>
-
 <script>
 
-let lang = "ru";
+let mode = "detect";
 const textarea = document.getElementById("text");
 
-textarea.addEventListener("input", updateCounter);
+function setMode(m, el){
 
-const t = {
-    ru:{
-        result:"AI вероятность",
-        counter:(c,w)=>`${c} символов | ${w} слов`,
-        insights:"Почему такой результат:",
-        copy:"Скопировано",
-        clear:"Очищено",
-        paste:"Вставлено"
-    },
-    en:{
-        result:"AI Score",
-        counter:(c,w)=>`${c} chars | ${w} words`,
-        insights:"Why this score:",
-        copy:"Copied",
-        clear:"Cleared",
-        paste:"Pasted"
-    }
-};
+    mode = m;
 
-function toggleLang(){
-    lang = lang === "ru" ? "en" : "ru";
-    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
-    updateCounter();
-}
+    document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+    el.classList.add("active");
 
-function updateCounter(){
-    let text = textarea.value;
-    let chars = text.length;
-    let words = text.trim() ? text.trim().split(/\s+/).length : 0;
-
-    document.getElementById("counter").innerText =
-        t[lang].counter(chars, words);
-}
-
-function showToast(msg){
-    let toast = document.getElementById("toast");
-    toast.innerText = msg;
-    toast.classList.add("show");
-    setTimeout(()=>toast.classList.remove("show"),1500);
+    run();
 }
 
 function clearText(){
     textarea.value = "";
     document.getElementById("resultCard").style.display = "none";
-    updateCounter();
-    showToast(t[lang].clear);
-}
-
-function copyResult(){
-    navigator.clipboard.writeText(
-        document.getElementById("resultText").innerText
-    );
-    showToast(t[lang].copy);
-}
-
-/* ✅ FIXED PASTE (работает везде) */
-function pasteText(){
-
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.readText()
-        .then(txt=>{
-            textarea.value = txt;
-            updateCounter();
-            showToast(t[lang].paste);
-        })
-        .catch(()=>{
-            fallbackPaste();
-        });
-    } else {
-        fallbackPaste();
-    }
-}
-
-function fallbackPaste(){
-    let txt = prompt(lang === "ru"
-        ? "Вставь текст (Ctrl+V → OK)"
-        : "Paste text (Ctrl+V → OK)");
-
-    if(txt){
-        textarea.value = txt;
-        updateCounter();
-        showToast(t[lang].paste);
-    }
-}
-
-function toggleTheme(){
-    document.body.classList.toggle("light");
 }
 
 function analyze(text){
@@ -278,32 +160,32 @@ function analyze(text){
     let score = 50;
     let reasons = [];
 
-    const bad = ["however","moreover","in conclusion","furthermore"];
-
     let lower = text.toLowerCase();
 
-    bad.forEach(p=>{
-        if(lower.includes(p)){
+    const ai = ["however","moreover","furthermore","in conclusion"];
+
+    ai.forEach(w=>{
+        if(lower.includes(w)){
             score += 10;
-            reasons.push("AI phrase: " + p);
+            reasons.push("AI phrase: " + w);
         }
     });
 
-    let sentences = text.split(".");
-    let avgLen = text.length / (sentences.length || 1);
-
-    if(avgLen > 120){
-        score += 10;
-        reasons.push("Long sentences");
-    }
-
     let words = lower.split(/\s+/);
     let unique = new Set(words);
+
     let diversity = unique.size / words.length;
 
     if(diversity < 0.55){
         score += 15;
-        reasons.push("Low repetition diversity");
+        reasons.push("Repetition detected");
+    }
+
+    let avg = text.length / (text.split(".").length || 1);
+
+    if(avg > 120){
+        score += 10;
+        reasons.push("Long sentences");
     }
 
     score = Math.max(5, Math.min(95, Math.round(score)));
@@ -311,29 +193,81 @@ function analyze(text){
     return {score, reasons};
 }
 
+function humanize(text){
+
+    return text
+        .replace(/however/gi,"но")
+        .replace(/moreover/gi,"к тому же")
+        .replace(/furthermore/gi,"и ещё")
+        .replace(/in conclusion/gi,"в итоге");
+}
+
+function improve(text){
+
+    return text
+        .replace(/however/gi,"но")
+        .replace(/moreover/gi,"к тому же")
+        .replace(/furthermore/gi,"и ещё")
+        .replace(/in conclusion/gi,"в итоге")
+        + "\n\n(улучшено по стилю)";
+}
+
 function run(){
 
     let text = textarea.value;
-    if(text.length < 10) return;
+    if(text.length < 5) return;
 
-    let result = analyze(text);
+    let resultCard = document.getElementById("resultCard");
+    resultCard.style.display = "block";
 
-    document.getElementById("resultCard").style.display = "block";
+    let title = document.getElementById("title");
+    let result = document.getElementById("result");
+    let fill = document.getElementById("fill");
+    let insights = document.getElementById("insights");
 
-    document.getElementById("resultTitle").innerText = t[lang].result;
-    document.getElementById("resultText").innerText =
-        result.score + "% AI-like text";
+    if(mode === "detect"){
 
-    document.getElementById("fill").style.width = result.score + "%";
-    document.getElementById("fill").style.background =
-        result.score > 70 ? "var(--danger)" : "var(--green)";
+        let r = analyze(text);
 
-    document.getElementById("insights").innerHTML =
-        "<b>" + t[lang].insights + "</b><br><br>" +
-        result.reasons.map(r=>"• "+r).join("<br>");
+        title.innerText = "AI Score";
+        result.innerText = r.score + "% AI-like";
+
+        fill.style.width = r.score + "%";
+        fill.style.background = r.score > 70 ? "var(--danger)" : "var(--green)";
+
+        insights.innerHTML = r.reasons.length
+            ? "• " + r.reasons.join("<br>• ")
+            : "No strong AI signals";
+    }
+
+    if(mode === "humanize"){
+
+        let out = humanize(text);
+
+        title.innerText = "Humanized Text";
+        result.innerText = out;
+
+        fill.style.width = "100%";
+        fill.style.background = "var(--yellow)";
+
+        insights.innerHTML = "Simplified & made more natural";
+    }
+
+    if(mode === "improve"){
+
+        let out = improve(text);
+
+        title.innerText = "Improved Text";
+        result.innerText = out;
+
+        fill.style.width = "100%";
+        fill.style.background = "var(--primary)";
+
+        insights.innerHTML = "Style optimized + AI markers reduced";
+    }
 }
 
-updateCounter();
+document.getElementById("b1").classList.add("active");
 
 </script>
 
