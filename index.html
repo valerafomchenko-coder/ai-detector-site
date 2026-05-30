@@ -30,7 +30,6 @@ textarea {
   height: 160px;
   padding: 10px;
   border-radius: 8px;
-  border: none;
 }
 
 button {
@@ -65,7 +64,6 @@ button {
   font-size: 13px;
 }
 </style>
-
 </head>
 
 <body>
@@ -73,7 +71,8 @@ button {
 <div class="container">
 
 <div class="topbar">
-  <h2>AI SaaS Detector</h2>
+  <h2 id="title">AI SaaS Detector</h2>
+  <button class="gray" onclick="toggleLang()" id="langBtn">EN</button>
 </div>
 
 <div class="card">
@@ -82,16 +81,17 @@ button {
 
 <br>
 
-<button class="primary" onclick="detect()">Проверить текст</button>
-<button class="primary" onclick="humanize()">Очеловечить</button>
-<button class="gray" onclick="clearText()">Очистить</button>
+<button class="primary" onclick="detect()" id="btnDetect">Проверить текст</button>
+<button class="primary" onclick="humanize()" id="btnHuman">Очеловечить</button>
+<button class="gray" onclick="clearText()" id="btnClear">Очистить</button>
+<button class="gray" onclick="copyResult()" id="btnCopy">Копировать</button>
 
 <div id="result"></div>
 
 </div>
 
 <div class="card">
-<h3>История</h3>
+<h3 id="histTitle">История</h3>
 <div id="history"></div>
 </div>
 
@@ -101,7 +101,48 @@ button {
 
 const API = "/api";
 
+let lang = "ru";
 let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+const dict = {
+  ru: {
+    title: "AI Детектор",
+    detect: "Проверить текст",
+    human: "Очеловечить",
+    clear: "Очистить",
+    copy: "Копировать",
+    history: "История",
+    low: "Низкий AI",
+    mid: "Средний AI",
+    high: "Высокий AI"
+  },
+  en: {
+    title: "AI Detector",
+    detect: "Check text",
+    human: "Humanize",
+    clear: "Clear",
+    copy: "Copy",
+    history: "History",
+    low: "Low AI",
+    mid: "Medium AI",
+    high: "High AI"
+  }
+};
+
+function applyLang() {
+  document.getElementById("title").innerText = dict[lang].title;
+  document.getElementById("btnDetect").innerText = dict[lang].detect;
+  document.getElementById("btnHuman").innerText = dict[lang].human;
+  document.getElementById("btnClear").innerText = dict[lang].clear;
+  document.getElementById("btnCopy").innerText = dict[lang].copy;
+  document.getElementById("histTitle").innerText = dict[lang].history;
+  document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
+}
+
+function toggleLang() {
+  lang = lang === "ru" ? "en" : "ru";
+  applyLang();
+}
 
 function saveHistory(text, result) {
   history.unshift({ text, result });
@@ -126,9 +167,9 @@ function renderHistory() {
 }
 
 function scoreLabel(score) {
-  if (score < 40) return "Низкий AI";
-  if (score < 70) return "Средний AI";
-  return "Высокий AI";
+  if (score < 40) return dict[lang].low;
+  if (score < 70) return dict[lang].mid;
+  return dict[lang].high;
 }
 
 async function detect() {
@@ -136,18 +177,15 @@ async function detect() {
 
   const res = await fetch(API + "/detect", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({ text })
   });
 
   const data = await res.json();
 
-  const label = scoreLabel(data.score);
-
-  const result = `${label} (${data.score})`;
+  const result = scoreLabel(data.score) + " (" + data.score + ")";
 
   document.getElementById("result").innerText = result;
-
   saveHistory(text, result);
 }
 
@@ -156,14 +194,13 @@ async function humanize() {
 
   const res = await fetch(API + "/humanize", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({ text })
   });
 
   const data = await res.json();
 
   document.getElementById("result").innerText = data.result;
-
   saveHistory(text, "humanized");
 }
 
@@ -172,6 +209,11 @@ function clearText() {
   document.getElementById("result").innerText = "";
 }
 
+function copyResult() {
+  navigator.clipboard.writeText(document.getElementById("result").innerText);
+}
+
+applyLang();
 renderHistory();
 
 </script>
