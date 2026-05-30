@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Humanly AI SaaS</title>
+<title>Text Intelligence SaaS</title>
 
 <style>
 body {
@@ -25,8 +25,11 @@ body {
     align-items: center;
 }
 
-h1 {
-    margin: 0;
+.brand {
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #60a5fa;
 }
 
 textarea {
@@ -51,9 +54,8 @@ button {
     cursor: pointer;
 }
 
-button:disabled {
-    background: #334155;
-    cursor: not-allowed;
+button:hover {
+    opacity: 0.9;
 }
 
 .row {
@@ -67,7 +69,7 @@ button:disabled {
     background: #111827;
     padding: 15px;
     border-radius: 12px;
-    min-height: 120px;
+    min-height: 140px;
 }
 
 .small {
@@ -75,20 +77,13 @@ button:disabled {
     font-size: 13px;
 }
 
-.history {
-    margin-top: 20px;
-    background: #111827;
-    padding: 15px;
-    border-radius: 12px;
-}
-
-.item {
+.history-item {
     padding: 8px;
     border-bottom: 1px solid #1f2937;
     cursor: pointer;
 }
 
-.item:hover {
+.history-item:hover {
     background: #1f2937;
 }
 </style>
@@ -99,7 +94,10 @@ button:disabled {
 <div class="container">
 
 <div class="header">
-    <h1>Humanly AI SaaS</h1>
+    <div class="brand" onclick="location.reload()">
+        Text Intelligence SaaS
+    </div>
+
     <div>
         <button onclick="setLang('ru')">RU</button>
         <button onclick="setLang('en')">EN</button>
@@ -115,19 +113,22 @@ button:disabled {
 <div>
 <button id="btnDetect" onclick="detect()"></button>
 <button id="btnHumanize" onclick="humanize()"></button>
-<button onclick="clearText()">Clear</button>
+<button id="btnClear" onclick="clearText()"></button>
+<button id="btnCopy" onclick="copyText()"></button>
 </div>
 
 <div class="row">
-    <div class="card">
-        <h3 id="resultTitle"></h3>
-        <p id="resultText"></p>
-    </div>
 
-    <div class="card">
-        <h3>History</h3>
-        <div id="history"></div>
-    </div>
+<div class="card">
+    <h3 id="resultTitle"></h3>
+    <p id="resultText"></p>
+</div>
+
+<div class="card">
+    <h3 id="historyTitle"></h3>
+    <div id="history"></div>
+</div>
+
 </div>
 
 </div>
@@ -140,18 +141,24 @@ const LIMIT = 20;
 
 const dict = {
     ru: {
-        subtitle: "SaaS платформа детектора и гуманизации текста",
-        detect: "Проверить",
-        humanize: "Очеловечить",
+        subtitle: "SaaS платформа анализа и переработки текста",
+        detect: "Проверить текст",
+        humanize: "Очеловечить текст",
+        clear: "Очистить",
+        copy: "Копировать результат",
+        history: "История",
         chars: "Символов",
         words: "Слов",
         ai: "Оценка ИИ",
         result: "Результат"
     },
     en: {
-        subtitle: "SaaS platform for AI detection and humanization",
-        detect: "Analyze",
-        humanize: "Humanize",
+        subtitle: "SaaS platform for text analysis and rewriting",
+        detect: "Analyze text",
+        humanize: "Humanize text",
+        clear: "Clear",
+        copy: "Copy result",
+        history: "History",
         chars: "Chars",
         words: "Words",
         ai: "AI Score",
@@ -168,10 +175,16 @@ function render(){
     const d = dict[lang];
 
     document.getElementById("subtitle").innerText = d.subtitle;
+
     document.getElementById("btnDetect").innerText = d.detect;
     document.getElementById("btnHumanize").innerText = d.humanize;
+    document.getElementById("btnClear").innerText = d.clear;
+    document.getElementById("btnCopy").innerText = d.copy;
+
+    document.getElementById("historyTitle").innerText = d.history;
 
     updateCounter();
+    renderHistory();
 }
 
 function updateCounter(){
@@ -187,20 +200,7 @@ function updateCounter(){
 
 document.getElementById("text").addEventListener("input", updateCounter);
 
-function checkLimit(){
-    if(requests >= LIMIT){
-        alert(lang === "ru"
-            ? "Лимит запросов исчерпан (демо)"
-            : "Request limit reached (demo)");
-        return false;
-    }
-    requests++;
-    return true;
-}
-
 function detect(){
-    if(!checkLimit()) return;
-
     let text = document.getElementById("text").value;
 
     fetch("http://2.26.31.163:3000/detect", {
@@ -211,13 +211,11 @@ function detect(){
     .then(r => r.json())
     .then(data => {
         show(dict[lang].ai, data.score + "%");
-        saveHistory("detect", text, data.score);
+        save("detect", text, data.score);
     });
 }
 
 function humanize(){
-    if(!checkLimit()) return;
-
     let text = document.getElementById("text").value;
 
     fetch("http://2.26.31.163:3000/humanize", {
@@ -228,7 +226,7 @@ function humanize(){
     .then(r => r.json())
     .then(data => {
         show(dict[lang].result, data.result);
-        saveHistory("humanize", text, data.result);
+        save("humanize", text, data.result);
     });
 }
 
@@ -242,7 +240,13 @@ function clearText(){
     updateCounter();
 }
 
-function saveHistory(type, input, output){
+function copyText(){
+    navigator.clipboard.writeText(
+        document.getElementById("resultText").innerText
+    );
+}
+
+function save(type, input, output){
     let history = JSON.parse(localStorage.getItem("history") || "[]");
 
     history.unshift({
@@ -262,7 +266,7 @@ function renderHistory(){
 
     document.getElementById("history").innerHTML =
         history.map(h =>
-            `<div class="item">
+            `<div class="history-item">
                 <b>${h.type}</b><br/>
                 ${h.input} → ${h.output}
             </div>`
@@ -270,7 +274,6 @@ function renderHistory(){
 }
 
 render();
-renderHistory();
 
 </script>
 
