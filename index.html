@@ -186,22 +186,20 @@ textarea.addEventListener("input", updateCounter);
 
 const t = {
     ru:{
-        analyze:"Анализ",
-        clear:"Очистить",
-        copy:"Копировать",
-        paste:"Вставить",
         result:"AI вероятность",
         counter:(c,w)=>`${c} символов | ${w} слов`,
-        insights:"Почему такой результат:"
+        insights:"Почему такой результат:",
+        copy:"Скопировано",
+        clear:"Очищено",
+        paste:"Вставлено"
     },
     en:{
-        analyze:"Analyze",
-        clear:"Clear",
-        copy:"Copy",
-        paste:"Paste",
         result:"AI Score",
         counter:(c,w)=>`${c} chars | ${w} words`,
-        insights:"Why this score:"
+        insights:"Why this score:",
+        copy:"Copied",
+        clear:"Cleared",
+        paste:"Pasted"
     }
 };
 
@@ -220,23 +218,55 @@ function updateCounter(){
         t[lang].counter(chars, words);
 }
 
+function showToast(msg){
+    let toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.classList.add("show");
+    setTimeout(()=>toast.classList.remove("show"),1500);
+}
+
 function clearText(){
     textarea.value = "";
     document.getElementById("resultCard").style.display = "none";
     updateCounter();
+    showToast(t[lang].clear);
 }
 
 function copyResult(){
     navigator.clipboard.writeText(
         document.getElementById("resultText").innerText
     );
+    showToast(t[lang].copy);
 }
 
+/* ✅ FIXED PASTE (работает везде) */
 function pasteText(){
-    navigator.clipboard.readText().then(txt=>{
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.readText()
+        .then(txt=>{
+            textarea.value = txt;
+            updateCounter();
+            showToast(t[lang].paste);
+        })
+        .catch(()=>{
+            fallbackPaste();
+        });
+    } else {
+        fallbackPaste();
+    }
+}
+
+function fallbackPaste(){
+    let txt = prompt(lang === "ru"
+        ? "Вставь текст (Ctrl+V → OK)"
+        : "Paste text (Ctrl+V → OK)");
+
+    if(txt){
         textarea.value = txt;
         updateCounter();
-    });
+        showToast(t[lang].paste);
+    }
 }
 
 function toggleTheme(){
@@ -255,7 +285,7 @@ function analyze(text){
     bad.forEach(p=>{
         if(lower.includes(p)){
             score += 10;
-            reasons.push("Detected formal AI phrase: " + p);
+            reasons.push("AI phrase: " + p);
         }
     });
 
@@ -264,7 +294,7 @@ function analyze(text){
 
     if(avgLen > 120){
         score += 10;
-        reasons.push("Long sentence structure");
+        reasons.push("Long sentences");
     }
 
     let words = lower.split(/\s+/);
@@ -273,12 +303,7 @@ function analyze(text){
 
     if(diversity < 0.55){
         score += 15;
-        reasons.push("Low word diversity (repetition)");
-    }
-
-    if(words.length > 0 && diversity > 0.7){
-        score -= 5;
-        reasons.push("High natural variation");
+        reasons.push("Low repetition diversity");
     }
 
     score = Math.max(5, Math.min(95, Math.round(score)));
@@ -305,7 +330,7 @@ function run(){
 
     document.getElementById("insights").innerHTML =
         "<b>" + t[lang].insights + "</b><br><br>" +
-        result.reasons.map(r => "• " + r).join("<br>");
+        result.reasons.map(r=>"• "+r).join("<br>");
 }
 
 updateCounter();
