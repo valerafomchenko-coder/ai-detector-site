@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Humanly AI 3.6</title>
+<title>Humanly AI</title>
 
 <style>
 :root{
@@ -30,14 +30,30 @@ body{
     padding:30px;
 }
 
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+
 h1{
-    font-size:38px;
-    margin-bottom:5px;
+    font-size:34px;
+    margin:0;
 }
 
 .small{
     color:var(--muted);
     font-size:14px;
+}
+
+.lang{
+    background:#334155;
+    border:none;
+    color:white;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
 }
 
 textarea{
@@ -55,9 +71,9 @@ textarea{
 
 .panel{
     display:flex;
-    flex-wrap:wrap;
     gap:10px;
     margin-top:12px;
+    flex-wrap:wrap;
 }
 
 button{
@@ -70,8 +86,13 @@ button{
     font-size:14px;
 }
 
-button.active{ background:var(--primary); }
-button.danger{ background:var(--danger); }
+button.primary{
+    background:var(--primary);
+}
+
+button.danger{
+    background:var(--danger);
+}
 
 .card{
     margin-top:20px;
@@ -92,23 +113,14 @@ button.danger{ background:var(--danger); }
     height:10px;
     width:0%;
     background:var(--green);
-    transition:0.4s;
-}
-
-.insights{
-    margin-top:15px;
-    padding:15px;
-    border-radius:10px;
-    background:rgba(148,163,184,0.1);
-    font-size:14px;
-    color:var(--muted);
+    transition:0.3s;
 }
 
 .split{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
-    margin-top:10px;
+    margin-top:15px;
 }
 
 .box{
@@ -119,10 +131,10 @@ button.danger{ background:var(--danger); }
     white-space:pre-wrap;
 }
 
-.history{
-    margin-top:20px;
-    font-size:13px;
+.insights{
+    margin-top:12px;
     color:var(--muted);
+    font-size:13px;
 }
 </style>
 </head>
@@ -131,20 +143,27 @@ button.danger{ background:var(--danger); }
 
 <div class="container">
 
-<h1>Humanly AI 3.6</h1>
-<div class="small">AI Tool — Detect • Humanize • Improve • History</div>
+<div class="header">
+    <div>
+        <h1 id="title">Humanly AI</h1>
+        <div class="small" id="subtitle">AI writing assistant</div>
+    </div>
 
-<textarea id="text" placeholder="Вставь текст..."></textarea>
+    <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
+</div>
+
+<textarea id="text" placeholder="Paste text..."></textarea>
 
 <div class="panel">
-    <button onclick="run('detect', this)" id="b1">Detect</button>
-    <button onclick="run('humanize', this)" id="b2">Humanize</button>
-    <button onclick="run('improve', this)" id="b3">Improve</button>
-    <button class="danger" onclick="clearText()">Clear</button>
+    <button class="primary" onclick="improve()">✨ Improve Text</button>
+    <button onclick="detect()">Detect AI</button>
+    <button onclick="copyText()">Copy</button>
+    <button onclick="clearText()" class="danger">Clear</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
-    <h2 id="title"></h2>
+
+    <h2 id="resultTitle"></h2>
 
     <div class="bar"><div class="fill" id="fill"></div></div>
 
@@ -153,47 +172,70 @@ button.danger{ background:var(--danger); }
         <div class="box" id="after"></div>
     </div>
 
-    <p id="result"></p>
     <div class="insights" id="insights"></div>
-</div>
-
-<div class="history" id="history">
-<b>History:</b><br/>
 </div>
 
 </div>
 
 <script>
 
-const textarea = document.getElementById("text");
-let history = [];
-let lastMode = "detect";
-let timer = null;
+let lang = "ru";
+const textEl = document.getElementById("text");
 
-textarea.addEventListener("input", ()=>{
-    clearTimeout(timer);
-    timer = setTimeout(()=>{
-        if(textarea.value.length > 5){
-            run(lastMode);
-        }
-    }, 600);
-});
+const T = {
+    ru:{
+        subtitle:"AI помощник для улучшения текста",
+        improve:"Улучшить текст",
+        detect:"Проверка на ИИ",
+        copy:"Скопировано",
+        clear:"Очищено",
+        placeholder:"Вставь текст...",
+        no:"Нет явных AI признаков"
+    },
+    en:{
+        subtitle:"AI writing assistant",
+        improve:"Improve Text",
+        detect:"AI Detection",
+        copy:"Copied",
+        clear:"Cleared",
+        placeholder:"Paste text...",
+        no:"No strong AI signals"
+    }
+};
+
+function toggleLang(){
+
+    lang = lang === "ru" ? "en" : "ru";
+
+    document.getElementById("subtitle").innerText = T[lang].subtitle;
+    document.getElementById("text").placeholder = T[lang].placeholder;
+
+    document.querySelector(".primary").innerText = "✨ " + T[lang].improve;
+    document.querySelectorAll("button")[1].innerText = T[lang].detect;
+
+}
 
 function clearText(){
-    textarea.value = "";
+    textEl.value = "";
     document.getElementById("resultCard").style.display = "none";
 }
 
-function analyze(text){
+function copyText(){
+    navigator.clipboard.writeText(textEl.value);
+    alert(T[lang].copy);
+}
+
+function detect(){
+
+    let text = textEl.value;
+    if(text.length < 5) return;
 
     let score = 50;
     let reasons = [];
 
     let lower = text.toLowerCase();
 
-    const ai = ["however","moreover","furthermore","in conclusion"];
-
-    ai.forEach(w=>{
+    ["however","moreover","furthermore"].forEach(w=>{
         if(lower.includes(w)){
             score += 10;
             reasons.push(w);
@@ -210,104 +252,49 @@ function analyze(text){
 
     score = Math.max(5, Math.min(95, Math.round(score)));
 
-    return {score, reasons};
+    showResult("AI Score", score + "%", reasons);
 }
 
-/* 🧠 improved humanizer */
-function humanize(text){
-    return text
+function improve(){
+
+    let text = textEl.value;
+    if(text.length < 5) return;
+
+    let improved = text
         .replace(/however/gi,"но")
         .replace(/moreover/gi,"и к тому же")
-        .replace(/furthermore/gi,"плюс")
-        .replace(/in conclusion/gi,"в итоге");
+        .replace(/furthermore/gi,"и ещё");
+
+    showSplit("Improved Text", text, improved);
 }
 
-function improve(text){
-
-    return text
-        .split(".")
-        .map(s=>s.trim())
-        .filter(Boolean)
-        .map(s=>{
-            if(s.length > 80) return s.replace(/however/gi,"но");
-            return s;
-        })
-        .join(". ") + ".";
-}
-
-/* 📊 history */
-function addHistory(mode, result){
-    history.unshift(mode + " → " + result);
-    history = history.slice(0,5);
-
-    document.getElementById("history").innerHTML =
-        "<b>History:</b><br/>" + history.join("<br/>");
-}
-
-function run(mode){
-
-    lastMode = mode;
-
-    let text = textarea.value;
-    if(text.length < 5) return;
+function showResult(title, value, reasons){
 
     let card = document.getElementById("resultCard");
     card.style.display = "block";
 
-    let title = document.getElementById("title");
-    let result = document.getElementById("result");
-    let fill = document.getElementById("fill");
+    document.getElementById("split").style.display = "none";
 
-    let split = document.getElementById("split");
-    let before = document.getElementById("before");
-    let after = document.getElementById("after");
+    document.getElementById("resultTitle").innerText = title;
+    document.getElementById("fill").style.width = parseInt(value) + "%";
 
-    split.style.display = "none";
+    document.getElementById("insights").innerText =
+        reasons.length ? reasons.join(", ") : T[lang].no;
+}
 
-    if(mode === "detect"){
+function showSplit(title, before, after){
 
-        let r = analyze(text);
+    let card = document.getElementById("resultCard");
+    card.style.display = "block";
 
-        title.innerText = "AI Score";
-        result.innerText = r.score + "% AI-like";
+    document.getElementById("resultTitle").innerText = title;
 
-        fill.style.width = r.score + "%";
-        fill.style.background = r.score > 70 ? "#ef4444" : "#22c55e";
+    document.getElementById("split").style.display = "grid";
+    document.getElementById("before").innerText = before;
+    document.getElementById("after").innerText = after;
 
-        addHistory("Detect", r.score + "%");
-    }
-
-    if(mode === "humanize"){
-
-        let out = humanize(text);
-
-        title.innerText = "Humanized";
-
-        split.style.display = "grid";
-        before.innerText = text;
-        after.innerText = out;
-
-        fill.style.width = "100%";
-        fill.style.background = "#f59e0b";
-
-        addHistory("Humanize", "done");
-    }
-
-    if(mode === "improve"){
-
-        let out = improve(text);
-
-        title.innerText = "Improved";
-
-        split.style.display = "grid";
-        before.innerText = text;
-        after.innerText = out;
-
-        fill.style.width = "100%";
-        fill.style.background = "#3b82f6";
-
-        addHistory("Improve", "done");
-    }
+    document.getElementById("fill").style.width = "100%";
+    document.getElementById("insights").innerText = "";
 }
 
 </script>
