@@ -6,64 +6,65 @@
 <title>Humanly AI</title>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:#0b1220;
-    color:white;
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
 }
 
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:30px;
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 30px;
 }
 
-h1{
-    font-size:34px;
+h1 {
+    font-size: 40px;
 }
 
-textarea{
-    width:100%;
-    height:180px;
-    margin-top:20px;
-    padding:15px;
-    border-radius:12px;
-    border:none;
-    background:#111a2e;
-    color:white;
-    font-size:15px;
+textarea {
+    width: 100%;
+    height: 180px;
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: #1e293b;
+    color: white;
+    font-size: 16px;
 }
 
-button{
-    margin-top:10px;
-    padding:10px 14px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:#3b82f6;
-    color:white;
+button {
+    margin: 8px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
 }
 
-.card{
-    margin-top:20px;
-    padding:20px;
-    background:#111a2e;
-    border-radius:12px;
+button:hover {
+    opacity: 0.9;
 }
 
-.split{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-    margin-top:10px;
+.card {
+    margin-top: 20px;
+    padding: 20px;
+    background: #1e293b;
+    border-radius: 12px;
+    text-align: left;
 }
 
-.box{
-    background:rgba(255,255,255,0.05);
-    padding:10px;
-    border-radius:10px;
-    white-space:pre-wrap;
+.small {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.lang {
+    margin-bottom: 10px;
 }
 </style>
 </head>
@@ -72,59 +73,100 @@ button{
 
 <div class="container">
 
-<h1>Humanly AI</h1>
+<h1 id="title">Humanly AI</h1>
+<p class="small" id="subtitle">AI Detector + Humanizer</p>
+
+<div class="lang">
+<button onclick="setLang('ru')">RU</button>
+<button onclick="setLang('en')">EN</button>
+</div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
 
+<div class="small" id="counter">Символов: 0 | Слов: 0</div>
+
 <br/>
 
-<button onclick="improve()">✨ Improve Text</button>
+<button onclick="detect()">Analyze AI</button>
+<button onclick="humanize()">Humanize</button>
+<button onclick="clearText()">Очистить</button>
+<button onclick="copyText()">Копировать</button>
 
 <div class="card" id="resultCard" style="display:none;">
-    <h2 id="title"></h2>
-
-    <div class="split" id="split" style="display:none;">
-        <div class="box" id="before"></div>
-        <div class="box" id="after"></div>
-    </div>
-
+    <h3 id="resultTitle"></h3>
+    <p id="resultText"></p>
 </div>
 
 </div>
 
 <script>
 
-const textEl = document.getElementById("text");
+let lang = "ru";
 
-async function improve(){
+const textarea = document.getElementById("text");
+textarea.addEventListener("input", updateCounter);
 
-    let text = textEl.value;
-    if(text.length < 5) return;
+function updateCounter(){
+    let text = textarea.value;
+    let chars = text.length;
+    let words = text.trim().split(/\s+/).filter(Boolean).length;
 
+    document.getElementById("counter").innerText =
+        (lang === "ru"
+            ? "Символов: " + chars + " | Слов: " + words
+            : "Chars: " + chars + " | Words: " + words);
+}
+
+function setLang(l){
+    lang = l;
+
+    document.getElementById("title").innerText =
+        l === "ru" ? "Humanly AI" : "Humanly AI";
+
+    document.getElementById("subtitle").innerText =
+        l === "ru" ? "Детектор + Очеловечивание текста" : "AI Detector + Humanizer";
+}
+
+function detect(){
+    fetch("http://2.26.31.163:3000/detect", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text: textarea.value})
+    })
+    .then(r => r.json())
+    .then(data => {
+        show("AI Score", data.score + "%");
+    });
+}
+
+function humanize(){
+    fetch("http://2.26.31.163:3000/humanize", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text: textarea.value})
+    })
+    .then(r => r.json())
+    .then(data => {
+        show("Humanized", data.result);
+    });
+}
+
+function show(title, text){
     document.getElementById("resultCard").style.display = "block";
-    document.getElementById("title").innerText = "Thinking...";
+    document.getElementById("resultTitle").innerText = title;
+    document.getElementById("resultText").innerText = text;
+}
 
-    try {
+function clearText(){
+    textarea.value = "";
+    document.getElementById("resultCard").style.display = "none";
+    updateCounter();
+}
 
-        let res = await fetch("https://YOUR-SERVER.DE/humanize", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ text })
-        });
-
-        let data = await res.json();
-
-        document.getElementById("split").style.display = "grid";
-        document.getElementById("before").innerText = text;
-        document.getElementById("after").innerText = data.result;
-
-        document.getElementById("title").innerText = "AI Improved Text";
-
-    } catch (e) {
-        document.getElementById("title").innerText = "Error (server not reachable)";
-    }
+function copyText(){
+    navigator.clipboard.writeText(
+        document.getElementById("resultText").innerText
+    );
 }
 
 </script>
