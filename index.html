@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Humanly AI 3.5</title>
+<title>Humanly AI 3.6</title>
 
 <style>
 :root{
@@ -68,18 +68,10 @@ button{
     background:#334155;
     color:white;
     font-size:14px;
-    transition:0.2s;
 }
 
-button.active{
-    background:var(--primary);
-}
-
+button.active{ background:var(--primary); }
 button.danger{ background:var(--danger); }
-
-.lang{
-    background:#475569;
-}
 
 .card{
     margin-top:20px;
@@ -111,6 +103,27 @@ button.danger{ background:var(--danger); }
     font-size:14px;
     color:var(--muted);
 }
+
+.split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+}
+
+.box{
+    background:rgba(255,255,255,0.05);
+    padding:10px;
+    border-radius:10px;
+    font-size:13px;
+    white-space:pre-wrap;
+}
+
+.history{
+    margin-top:20px;
+    font-size:13px;
+    color:var(--muted);
+}
 </style>
 </head>
 
@@ -118,94 +131,53 @@ button.danger{ background:var(--danger); }
 
 <div class="container">
 
-<div style="display:flex;justify-content:space-between;align-items:center;">
-    <div>
-        <h1 id="title">Humanly AI 3.5</h1>
-        <div class="small" id="subtitle">AI Text Tool</div>
-    </div>
+<h1>Humanly AI 3.6</h1>
+<div class="small">AI Tool — Detect • Humanize • Improve • History</div>
 
-    <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
-</div>
-
-<textarea id="text" placeholder="..."></textarea>
+<textarea id="text" placeholder="Вставь текст..."></textarea>
 
 <div class="panel">
-    <button id="b1" onclick="setMode('detect', this)">Detect AI</button>
-    <button id="b2" onclick="setMode('humanize', this)">Humanize</button>
-    <button id="b3" onclick="setMode('improve', this)">Improve</button>
-    <button class="danger" onclick="clearText()" id="clearBtn">Clear</button>
+    <button onclick="run('detect', this)" id="b1">Detect</button>
+    <button onclick="run('humanize', this)" id="b2">Humanize</button>
+    <button onclick="run('improve', this)" id="b3">Improve</button>
+    <button class="danger" onclick="clearText()">Clear</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
-    <h2 id="resTitle"></h2>
+    <h2 id="title"></h2>
+
     <div class="bar"><div class="fill" id="fill"></div></div>
+
+    <div class="split" id="split" style="display:none;">
+        <div class="box" id="before"></div>
+        <div class="box" id="after"></div>
+    </div>
+
     <p id="result"></p>
     <div class="insights" id="insights"></div>
+</div>
+
+<div class="history" id="history">
+<b>History:</b><br/>
 </div>
 
 </div>
 
 <script>
 
-let mode = "detect";
-let lang = "ru";
-
-const t = {
-    ru:{
-        subtitle:"AI анализ текста",
-        detect:"Определение ИИ",
-        humanize:"Очеловечивание текста",
-        improve:"Улучшение текста",
-        clear:"Очистить",
-        placeholder:"Вставь текст...",
-        no:"Нет явных признаков ИИ",
-        insight:"Разбор:"
-    },
-    en:{
-        subtitle:"AI text analysis tool",
-        detect:"AI Detection",
-        humanize:"Humanization",
-        improve:"Text Improvement",
-        clear:"Clear",
-        placeholder:"Paste text...",
-        no:"No strong AI signals",
-        insight:"Analysis:"
-    }
-};
-
 const textarea = document.getElementById("text");
+let history = [];
+let lastMode = "detect";
+let timer = null;
 
-function toggleLang(){
-
-    lang = lang === "ru" ? "en" : "ru";
-
-    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
-    document.getElementById("subtitle").innerText = t[lang].subtitle;
-    document.getElementById("clearBtn").innerText = t[lang].clear;
-    textarea.placeholder = t[lang].placeholder;
-
-    // переводы кнопок режимов
-    document.getElementById("b1").innerText = t[lang].detect;
-    document.getElementById("b2").innerText = t[lang].humanize;
-    document.getElementById("b3").innerText = t[lang].improve;
-
-    run();
-}
-
-function setMode(m, el){
-
-    mode = m;
-
-    document.querySelectorAll("button").forEach(b=>{
-        if(!b.classList.contains("lang") && !b.classList.contains("danger")){
-            b.classList.remove("active");
+textarea.addEventListener("input", ()=>{
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+        if(textarea.value.length > 5){
+            run(lastMode);
         }
-    });
-
-    el.classList.add("active");
-
-    run();
-}
+    }, 600);
+});
 
 function clearText(){
     textarea.value = "";
@@ -224,24 +196,16 @@ function analyze(text){
     ai.forEach(w=>{
         if(lower.includes(w)){
             score += 10;
-            reasons.push("AI phrase: " + w);
+            reasons.push(w);
         }
     });
 
     let words = lower.split(/\s+/);
     let unique = new Set(words);
-    let diversity = unique.size / words.length;
 
-    if(diversity < 0.55){
+    if(unique.size / words.length < 0.55){
         score += 15;
-        reasons.push("Repetition detected");
-    }
-
-    let avg = text.length / (text.split(".").length || 1);
-
-    if(avg > 120){
-        score += 10;
-        reasons.push("Long sentences");
+        reasons.push("repetition");
     }
 
     score = Math.max(5, Math.min(95, Math.round(score)));
@@ -249,19 +213,40 @@ function analyze(text){
     return {score, reasons};
 }
 
+/* 🧠 improved humanizer */
 function humanize(text){
     return text
         .replace(/however/gi,"но")
-        .replace(/moreover/gi,"к тому же")
-        .replace(/furthermore/gi,"и ещё")
+        .replace(/moreover/gi,"и к тому же")
+        .replace(/furthermore/gi,"плюс")
         .replace(/in conclusion/gi,"в итоге");
 }
 
 function improve(text){
-    return humanize(text) + "\n\n(optimized)";
+
+    return text
+        .split(".")
+        .map(s=>s.trim())
+        .filter(Boolean)
+        .map(s=>{
+            if(s.length > 80) return s.replace(/however/gi,"но");
+            return s;
+        })
+        .join(". ") + ".";
 }
 
-function run(){
+/* 📊 history */
+function addHistory(mode, result){
+    history.unshift(mode + " → " + result);
+    history = history.slice(0,5);
+
+    document.getElementById("history").innerHTML =
+        "<b>History:</b><br/>" + history.join("<br/>");
+}
+
+function run(mode){
+
+    lastMode = mode;
 
     let text = textarea.value;
     if(text.length < 5) return;
@@ -269,52 +254,61 @@ function run(){
     let card = document.getElementById("resultCard");
     card.style.display = "block";
 
-    let rTitle = document.getElementById("resTitle");
+    let title = document.getElementById("title");
     let result = document.getElementById("result");
     let fill = document.getElementById("fill");
-    let insights = document.getElementById("insights");
+
+    let split = document.getElementById("split");
+    let before = document.getElementById("before");
+    let after = document.getElementById("after");
+
+    split.style.display = "none";
 
     if(mode === "detect"){
 
         let r = analyze(text);
 
-        rTitle.innerText = t[lang].detect;
+        title.innerText = "AI Score";
         result.innerText = r.score + "% AI-like";
 
         fill.style.width = r.score + "%";
-        fill.style.background = r.score > 70 ? "var(--danger)" : "var(--green)";
+        fill.style.background = r.score > 70 ? "#ef4444" : "#22c55e";
 
-        insights.innerHTML = r.reasons.length
-            ? "• " + r.reasons.join("<br>• ")
-            : t[lang].no;
+        addHistory("Detect", r.score + "%");
     }
 
     if(mode === "humanize"){
 
-        rTitle.innerText = t[lang].humanize;
-        result.innerText = humanize(text);
+        let out = humanize(text);
+
+        title.innerText = "Humanized";
+
+        split.style.display = "grid";
+        before.innerText = text;
+        after.innerText = out;
 
         fill.style.width = "100%";
-        fill.style.background = "var(--yellow)";
+        fill.style.background = "#f59e0b";
 
-        insights.innerText = t[lang].insight;
+        addHistory("Humanize", "done");
     }
 
     if(mode === "improve"){
 
-        rTitle.innerText = t[lang].improve;
-        result.innerText = improve(text);
+        let out = improve(text);
+
+        title.innerText = "Improved";
+
+        split.style.display = "grid";
+        before.innerText = text;
+        after.innerText = out;
 
         fill.style.width = "100%";
-        fill.style.background = "var(--primary)";
+        fill.style.background = "#3b82f6";
 
-        insights.innerText = t[lang].insight;
+        addHistory("Improve", "done");
     }
 }
-
-document.getElementById("b1").classList.add("active");
-
-textarea.placeholder = t[lang].placeholder;
 
 </script>
 
