@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<title>Humanly AI 3.0</title>
+<title>Humanly AI 3.1</title>
 
 <style>
 body {
@@ -39,13 +38,13 @@ textarea {
 }
 
 button {
-    margin-top: 15px;
-    padding: 14px 22px;
+    margin: 10px 5px 0 5px;
+    padding: 12px 18px;
     border: none;
     border-radius: 10px;
     background: #3b82f6;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
 }
 
@@ -63,6 +62,7 @@ button:hover {
 .small {
     color: #94a3b8;
     font-size: 14px;
+    margin-top: 10px;
 }
 
 .bar {
@@ -96,6 +96,10 @@ button:hover {
 .tab.active {
     background: #3b82f6;
 }
+
+.controls {
+    margin-top: 10px;
+}
 </style>
 </head>
 
@@ -103,19 +107,24 @@ button:hover {
 
 <div class="container">
 
-<h1>Humanly AI 3.0</h1>
-<p class="small">AI Text Detector + Humanizer</p>
+<h1 id="title">Humanly AI 3.1</h1>
+<p class="small" id="subtitle">AI Text Detector + Humanizer</p>
 
 <div class="tabs">
-    <div class="tab active" onclick="setMode('detect')">Detect AI</div>
-    <div class="tab" onclick="setMode('humanize')">Humanize</div>
+    <div class="tab active" onclick="setMode('detect', event)">Detect AI</div>
+    <div class="tab" onclick="setMode('humanize', event)">Humanize</div>
 </div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
 
-<br/>
+<div class="small" id="counter">Символов: 0 | Слов: 0</div>
 
-<button onclick="run()">Analyze</button>
+<div class="controls">
+    <button onclick="run()" id="btnRun">Analyze</button>
+    <button onclick="clearText()" id="btnClear">Очистить</button>
+    <button onclick="copyResult()" id="btnCopy">Копировать</button>
+    <button onclick="toggleLang()" id="btnLang">EN</button>
+</div>
 
 <div class="card" id="resultCard" style="display:none;">
     <h2 id="resultTitle"></h2>
@@ -128,19 +137,74 @@ button:hover {
 <script>
 
 let mode = "detect";
+let lang = "ru";
 
-function setMode(m) {
+const textarea = document.getElementById("text");
+
+textarea.addEventListener("input", updateCounter);
+
+function setMode(m, event) {
     mode = m;
-
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     event.target.classList.add("active");
+}
+
+function updateCounter() {
+    let text = textarea.value;
+
+    let chars = text.length;
+
+    let words = text.trim()
+        ? text.trim().split(/\s+/).length
+        : 0;
+
+    document.getElementById("counter").innerText =
+        lang === "ru"
+        ? `Символов: ${chars} | Слов: ${words}`
+        : `Chars: ${chars} | Words: ${words}`;
+}
+
+function clearText() {
+    textarea.value = "";
+    document.getElementById("resultCard").style.display = "none";
+    updateCounter();
+}
+
+function copyResult() {
+    let text = document.getElementById("resultText").innerText;
+    navigator.clipboard.writeText(text);
+}
+
+function toggleLang() {
+    lang = lang === "ru" ? "en" : "ru";
+
+    document.getElementById("title").innerText =
+        lang === "ru" ? "Humanly AI 3.1" : "Humanly AI 3.1";
+
+    document.getElementById("subtitle").innerText =
+        lang === "ru"
+        ? "AI Text Detector + Humanizer"
+        : "AI Text Detector + Humanizer Tool";
+
+    document.getElementById("btnRun").innerText =
+        lang === "ru" ? "Analyze" : "Run";
+
+    document.getElementById("btnClear").innerText =
+        lang === "ru" ? "Очистить" : "Clear";
+
+    document.getElementById("btnCopy").innerText =
+        lang === "ru" ? "Копировать" : "Copy";
+
+    document.getElementById("btnLang").innerText =
+        lang === "ru" ? "EN" : "RU";
+
+    updateCounter();
 }
 
 function analyzeText(text) {
 
     let score = 50;
 
-    // AI-паттерны
     const aiPhrases = [
         "however", "moreover", "in conclusion",
         "it is important to note", "furthermore"
@@ -150,14 +214,12 @@ function analyzeText(text) {
         if (text.toLowerCase().includes(p)) score += 8;
     });
 
-    // длина предложений
     let sentences = text.split(".");
     let avgLen = text.length / (sentences.length || 1);
 
     if (avgLen > 120) score += 10;
     if (avgLen < 40) score -= 5;
 
-    // повторяемость слов
     let words = text.toLowerCase().split(/\s+/);
     let unique = new Set(words);
     let diversity = unique.size / words.length;
@@ -183,7 +245,7 @@ function humanizeText(text) {
 
 function run() {
 
-    let text = document.getElementById("text").value;
+    let text = textarea.value;
 
     if (text.length < 10) return;
 
@@ -194,18 +256,24 @@ function run() {
 
         let score = analyzeText(text);
 
-        document.getElementById("resultTitle").innerText = "AI Probability";
-        document.getElementById("resultText").innerText = score + "% AI-like text";
+        document.getElementById("resultTitle").innerText =
+            lang === "ru" ? "AI вероятность" : "AI Probability";
+
+        document.getElementById("resultText").innerText =
+            score + "% AI-like text";
 
         document.getElementById("fill").style.width = score + "%";
-        document.getElementById("fill").style.background = score > 70 ? "#ef4444" : "#22c55e";
+        document.getElementById("fill").style.background =
+            score > 70 ? "#ef4444" : "#22c55e";
     }
 
     if (mode === "humanize") {
 
         let result = humanizeText(text);
 
-        document.getElementById("resultTitle").innerText = "Humanized Text";
+        document.getElementById("resultTitle").innerText =
+            lang === "ru" ? "Результат" : "Humanized Text";
+
         document.getElementById("resultText").innerText = result;
 
         document.getElementById("fill").style.width = "100%";
@@ -213,8 +281,9 @@ function run() {
     }
 }
 
+updateCounter();
+
 </script>
 
 </body>
 </html>
-<!-- rebuild -->
