@@ -121,19 +121,19 @@ button.danger{ background:var(--danger); }
 <div style="display:flex;justify-content:space-between;align-items:center;">
     <div>
         <h1 id="title">Humanly AI 3.5</h1>
-        <div class="small" id="subtitle">AI Text Tool — Detect • Humanize • Improve</div>
+        <div class="small" id="subtitle">AI Text Tool</div>
     </div>
 
     <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
 </div>
 
-<textarea id="text" placeholder="Вставь текст..."></textarea>
+<textarea id="text" placeholder="..."></textarea>
 
 <div class="panel">
     <button id="b1" onclick="setMode('detect', this)">Detect AI</button>
     <button id="b2" onclick="setMode('humanize', this)">Humanize</button>
     <button id="b3" onclick="setMode('improve', this)">Improve</button>
-    <button class="danger" onclick="clearText()" id="clearBtn">Очистить</button>
+    <button class="danger" onclick="clearText()" id="clearBtn">Clear</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
@@ -150,39 +150,46 @@ button.danger{ background:var(--danger); }
 let mode = "detect";
 let lang = "ru";
 
-const textarea = document.getElementById("text");
-
 const t = {
     ru:{
-        subtitle:"AI Text Tool — Анализ • Очеловечивание • Улучшение",
+        subtitle:"AI анализ текста",
+        detect:"Определение ИИ",
+        humanize:"Очеловечивание текста",
+        improve:"Улучшение текста",
         clear:"Очистить",
-        detect:"AI вероятность",
-        humanized:"Очеловеченный текст",
-        improved:"Улучшенный текст",
-        no:"Нет явных AI признаков",
+        placeholder:"Вставь текст...",
+        no:"Нет явных признаков ИИ",
         insight:"Разбор:"
     },
     en:{
-        subtitle:"AI Text Tool — Detect • Humanize • Improve",
+        subtitle:"AI text analysis tool",
+        detect:"AI Detection",
+        humanize:"Humanization",
+        improve:"Text Improvement",
         clear:"Clear",
-        detect:"AI Score",
-        humanized:"Humanized Text",
-        improved:"Improved Text",
+        placeholder:"Paste text...",
         no:"No strong AI signals",
         insight:"Analysis:"
     }
 };
+
+const textarea = document.getElementById("text");
 
 function toggleLang(){
 
     lang = lang === "ru" ? "en" : "ru";
 
     document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
-
     document.getElementById("subtitle").innerText = t[lang].subtitle;
     document.getElementById("clearBtn").innerText = t[lang].clear;
+    textarea.placeholder = t[lang].placeholder;
 
-    setMode(mode, document.querySelector(".active"));
+    // переводы кнопок режимов
+    document.getElementById("b1").innerText = t[lang].detect;
+    document.getElementById("b2").innerText = t[lang].humanize;
+    document.getElementById("b3").innerText = t[lang].improve;
+
+    run();
 }
 
 function setMode(m, el){
@@ -251,7 +258,7 @@ function humanize(text){
 }
 
 function improve(text){
-    return humanize(text) + "\n\n(optimized style)";
+    return humanize(text) + "\n\n(optimized)";
 }
 
 function run(){
@@ -284,7 +291,7 @@ function run(){
 
     if(mode === "humanize"){
 
-        rTitle.innerText = t[lang].humanized;
+        rTitle.innerText = t[lang].humanize;
         result.innerText = humanize(text);
 
         fill.style.width = "100%";
@@ -295,7 +302,7 @@ function run(){
 
     if(mode === "improve"){
 
-        rTitle.innerText = t[lang].improved;
+        rTitle.innerText = t[lang].improve;
         result.innerText = improve(text);
 
         fill.style.width = "100%";
@@ -306,6 +313,8 @@ function run(){
 }
 
 document.getElementById("b1").classList.add("active");
+
+textarea.placeholder = t[lang].placeholder;
 
 </script>
 
