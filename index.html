@@ -1,280 +1,69 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Text Intelligence SaaS</title>
-
+<meta charset="UTF-8">
+<title>AI SaaS Detector</title>
 <style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0b1220;
-    color: white;
-}
-
-.container {
-    max-width: 1000px;
-    margin: auto;
-    padding: 30px;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.brand {
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-    color: #60a5fa;
-}
-
-textarea {
-    width: 100%;
-    height: 180px;
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    background: #1e293b;
-    color: white;
-    font-size: 16px;
-}
-
-button {
-    margin: 6px;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 10px;
-    background: #3b82f6;
-    color: white;
-    cursor: pointer;
-}
-
-button:hover {
-    opacity: 0.9;
-}
-
-.row {
-    display: flex;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.card {
-    flex: 1;
-    background: #111827;
-    padding: 15px;
-    border-radius: 12px;
-    min-height: 140px;
-}
-
-.small {
-    color: #94a3b8;
-    font-size: 13px;
-}
-
-.history-item {
-    padding: 8px;
-    border-bottom: 1px solid #1f2937;
-    cursor: pointer;
-}
-
-.history-item:hover {
-    background: #1f2937;
-}
+body { font-family: Arial; padding: 20px; background: #f6f6f6; }
+textarea { width: 100%; height: 160px; padding: 10px; }
+button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+#result { margin-top: 20px; font-weight: bold; white-space: pre-wrap; }
+.container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-<div class="header">
-    <div class="brand" onclick="location.reload()">
-        Text Intelligence SaaS
-    </div>
-
-    <div>
-        <button onclick="setLang('ru')">RU</button>
-        <button onclick="setLang('en')">EN</button>
-    </div>
-</div>
-
-<p class="small" id="subtitle"></p>
+<h2>AI Detector SaaS</h2>
 
 <textarea id="text"></textarea>
 
-<div class="small" id="counter"></div>
+<br>
 
-<div>
-<button id="btnDetect" onclick="detect()"></button>
-<button id="btnHumanize" onclick="humanize()"></button>
-<button id="btnClear" onclick="clearText()"></button>
-<button id="btnCopy" onclick="copyText()"></button>
-</div>
+<button onclick="detect()">Проверить текст</button>
+<button onclick="humanize()">Очеловечить текст</button>
+<button onclick="clearText()">Очистить</button>
 
-<div class="row">
-
-<div class="card">
-    <h3 id="resultTitle"></h3>
-    <p id="resultText"></p>
-</div>
-
-<div class="card">
-    <h3 id="historyTitle"></h3>
-    <div id="history"></div>
-</div>
-
-</div>
+<div id="result"></div>
 
 </div>
 
 <script>
+const API = "/api";
 
-let lang = "ru";
-let requests = 0;
-const LIMIT = 20;
+async function detect() {
+  const text = document.getElementById("text").value;
 
-const dict = {
-    ru: {
-        subtitle: "SaaS платформа анализа и переработки текста",
-        detect: "Проверить текст",
-        humanize: "Очеловечить текст",
-        clear: "Очистить",
-        copy: "Копировать результат",
-        history: "История",
-        chars: "Символов",
-        words: "Слов",
-        ai: "Оценка ИИ",
-        result: "Результат"
-    },
-    en: {
-        subtitle: "SaaS platform for text analysis and rewriting",
-        detect: "Analyze text",
-        humanize: "Humanize text",
-        clear: "Clear",
-        copy: "Copy result",
-        history: "History",
-        chars: "Chars",
-        words: "Words",
-        ai: "AI Score",
-        result: "Result"
-    }
-};
+  const res = await fetch(API + "/detect", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ text })
+  });
 
-function setLang(l){
-    lang = l;
-    render();
+  const data = await res.json();
+  document.getElementById("result").innerText =
+    "AI SCORE: " + data.score;
 }
 
-function render(){
-    const d = dict[lang];
+async function humanize() {
+  const text = document.getElementById("text").value;
 
-    document.getElementById("subtitle").innerText = d.subtitle;
+  const res = await fetch(API + "/humanize", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ text })
+  });
 
-    document.getElementById("btnDetect").innerText = d.detect;
-    document.getElementById("btnHumanize").innerText = d.humanize;
-    document.getElementById("btnClear").innerText = d.clear;
-    document.getElementById("btnCopy").innerText = d.copy;
-
-    document.getElementById("historyTitle").innerText = d.history;
-
-    updateCounter();
-    renderHistory();
+  const data = await res.json();
+  document.getElementById("result").innerText =
+    data.result;
 }
 
-function updateCounter(){
-    let text = document.getElementById("text").value;
-    let chars = text.length;
-    let words = text.trim().split(/\s+/).filter(Boolean).length;
-
-    const d = dict[lang];
-
-    document.getElementById("counter").innerText =
-        `${d.chars}: ${chars} | ${d.words}: ${words}`;
+function clearText() {
+  document.getElementById("text").value = "";
+  document.getElementById("result").innerText = "";
 }
-
-document.getElementById("text").addEventListener("input", updateCounter);
-
-function detect(){
-    let text = document.getElementById("text").value;
-
-    fetch("http://2.26.31.163:3000/detect", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({text})
-    })
-    .then(r => r.json())
-    .then(data => {
-        show(dict[lang].ai, data.score + "%");
-        save("detect", text, data.score);
-    });
-}
-
-function humanize(){
-    let text = document.getElementById("text").value;
-
-    fetch("http://2.26.31.163:3000/humanize", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({text})
-    })
-    .then(r => r.json())
-    .then(data => {
-        show(dict[lang].result, data.result);
-        save("humanize", text, data.result);
-    });
-}
-
-function show(title, text){
-    document.getElementById("resultTitle").innerText = title;
-    document.getElementById("resultText").innerText = text;
-}
-
-function clearText(){
-    document.getElementById("text").value = "";
-    updateCounter();
-}
-
-function copyText(){
-    navigator.clipboard.writeText(
-        document.getElementById("resultText").innerText
-    );
-}
-
-function save(type, input, output){
-    let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-    history.unshift({
-        type,
-        input: input.slice(0, 80),
-        output: String(output).slice(0, 80)
-    });
-
-    history = history.slice(0, 10);
-
-    localStorage.setItem("history", JSON.stringify(history));
-    renderHistory();
-}
-
-function renderHistory(){
-    let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-    document.getElementById("history").innerHTML =
-        history.map(h =>
-            `<div class="history-item">
-                <b>${h.type}</b><br/>
-                ${h.input} → ${h.output}
-            </div>`
-        ).join("");
-}
-
-render();
-
 </script>
 
 </body>
