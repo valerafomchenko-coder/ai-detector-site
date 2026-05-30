@@ -37,8 +37,8 @@ textarea {
 }
 
 button {
-    margin: 8px;
-    padding: 12px 18px;
+    margin: 6px;
+    padding: 12px 16px;
     border: none;
     border-radius: 10px;
     background: #3b82f6;
@@ -62,10 +62,6 @@ button:hover {
     color: #94a3b8;
     font-size: 14px;
 }
-
-.lang {
-    margin-bottom: 10px;
-}
 </style>
 </head>
 
@@ -73,24 +69,24 @@ button:hover {
 
 <div class="container">
 
-<h1 id="title">Humanly AI</h1>
-<p class="small" id="subtitle">AI Detector + Humanizer</p>
+<h1 id="title"></h1>
+<p class="small" id="subtitle"></p>
 
-<div class="lang">
+<div>
 <button onclick="setLang('ru')">RU</button>
 <button onclick="setLang('en')">EN</button>
 </div>
 
-<textarea id="text" placeholder="Вставь текст..."></textarea>
+<textarea id="text"></textarea>
 
-<div class="small" id="counter">Символов: 0 | Слов: 0</div>
+<div class="small" id="counter"></div>
 
 <br/>
 
-<button onclick="detect()">Analyze AI</button>
-<button onclick="humanize()">Humanize</button>
-<button onclick="clearText()">Очистить</button>
-<button onclick="copyText()">Копировать</button>
+<button onclick="detect()" id="btnDetect"></button>
+<button onclick="humanize()" id="btnHumanize"></button>
+<button onclick="clearText()" id="btnClear"></button>
+<button onclick="copyText()" id="btnCopy"></button>
 
 <div class="card" id="resultCard" style="display:none;">
     <h3 id="resultTitle"></h3>
@@ -103,28 +99,65 @@ button:hover {
 
 let lang = "ru";
 
+const dict = {
+    ru: {
+        title: "Humanly AI",
+        subtitle: "Детектор и очеловечивание текста",
+        detect: "Проверить текст",
+        humanize: "Очеловечить текст",
+        clear: "Очистить",
+        copy: "Копировать результат",
+        chars: "Символов",
+        words: "Слов",
+        aiScore: "Оценка ИИ",
+        humanized: "Переписанный текст",
+        placeholder: "Вставьте текст сюда..."
+    },
+    en: {
+        title: "Humanly AI",
+        subtitle: "AI Detector and Humanizer",
+        detect: "Analyze text",
+        humanize: "Humanize text",
+        clear: "Clear",
+        copy: "Copy result",
+        chars: "Characters",
+        words: "Words",
+        aiScore: "AI Score",
+        humanized: "Humanized text",
+        placeholder: "Paste your text here..."
+    }
+};
+
 const textarea = document.getElementById("text");
+
 textarea.addEventListener("input", updateCounter);
+
+function setLang(l){
+    lang = l;
+    const d = dict[lang];
+
+    document.getElementById("title").innerText = d.title;
+    document.getElementById("subtitle").innerText = d.subtitle;
+
+    document.getElementById("btnDetect").innerText = d.detect;
+    document.getElementById("btnHumanize").innerText = d.humanize;
+    document.getElementById("btnClear").innerText = d.clear;
+    document.getElementById("btnCopy").innerText = d.copy;
+
+    textarea.placeholder = d.placeholder;
+
+    updateCounter();
+}
 
 function updateCounter(){
     let text = textarea.value;
     let chars = text.length;
     let words = text.trim().split(/\s+/).filter(Boolean).length;
 
+    const d = dict[lang];
+
     document.getElementById("counter").innerText =
-        (lang === "ru"
-            ? "Символов: " + chars + " | Слов: " + words
-            : "Chars: " + chars + " | Words: " + words);
-}
-
-function setLang(l){
-    lang = l;
-
-    document.getElementById("title").innerText =
-        l === "ru" ? "Humanly AI" : "Humanly AI";
-
-    document.getElementById("subtitle").innerText =
-        l === "ru" ? "Детектор + Очеловечивание текста" : "AI Detector + Humanizer";
+        `${d.chars}: ${chars} | ${d.words}: ${words}`;
 }
 
 function detect(){
@@ -135,7 +168,7 @@ function detect(){
     })
     .then(r => r.json())
     .then(data => {
-        show("AI Score", data.score + "%");
+        show(dict[lang].aiScore, data.score + "%");
     });
 }
 
@@ -147,7 +180,7 @@ function humanize(){
     })
     .then(r => r.json())
     .then(data => {
-        show("Humanized", data.result);
+        show(dict[lang].humanized, data.result);
     });
 }
 
@@ -168,6 +201,9 @@ function copyText(){
         document.getElementById("resultText").innerText
     );
 }
+
+// init
+setLang("ru");
 
 </script>
 
