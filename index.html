@@ -19,20 +19,8 @@ body{
     padding:30px;
 }
 
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
 h1{
-    margin:0;
     font-size:34px;
-}
-
-.small{
-    color:#94a3b8;
-    font-size:14px;
 }
 
 textarea{
@@ -45,28 +33,17 @@ textarea{
     background:#111a2e;
     color:white;
     font-size:15px;
-    outline:none;
-}
-
-.panel{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-    flex-wrap:wrap;
 }
 
 button{
+    margin-top:10px;
     padding:10px 14px;
     border:none;
     border-radius:10px;
     cursor:pointer;
-    background:#334155;
+    background:#3b82f6;
     color:white;
-    font-size:14px;
 }
-
-.primary{ background:#3b82f6; }
-.danger{ background:#ef4444; }
 
 .card{
     margin-top:20px;
@@ -87,11 +64,6 @@ button{
     padding:10px;
     border-radius:10px;
     white-space:pre-wrap;
-    font-size:13px;
-}
-
-.lang{
-    background:#475569;
 }
 </style>
 </head>
@@ -100,23 +72,13 @@ button{
 
 <div class="container">
 
-<div class="header">
-    <div>
-        <h1>Humanly AI</h1>
-        <div class="small" id="subtitle">AI writing tool</div>
-    </div>
+<h1>Humanly AI</h1>
 
-    <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
-</div>
+<textarea id="text" placeholder="Вставь текст..."></textarea>
 
-<textarea id="text" placeholder=""></textarea>
+<br/>
 
-<div class="panel">
-    <button class="primary" onclick="improve()" id="btnImprove"></button>
-    <button onclick="detect()" id="btnDetect"></button>
-    <button onclick="copyText()" id="btnCopy"></button>
-    <button class="danger" onclick="clearText()" id="btnClear"></button>
-</div>
+<button onclick="improve()">✨ Improve Text</button>
 
 <div class="card" id="resultCard" style="display:none;">
     <h2 id="title"></h2>
@@ -126,109 +88,46 @@ button{
         <div class="box" id="after"></div>
     </div>
 
-    <div id="result"></div>
 </div>
 
 </div>
 
 <script>
 
-let lang = "ru";
 const textEl = document.getElementById("text");
 
-const T = {
-    ru:{
-        subtitle:"AI инструмент для улучшения текста",
-        improve:"Улучшить текст",
-        detect:"Проверить AI",
-        copy:"Копировать",
-        clear:"Очистить",
-        placeholder:"Вставь текст...",
-        score:"AI вероятность",
-        improved:"Улучшенный текст"
-    },
-    en:{
-        subtitle:"AI writing tool",
-        improve:"Improve Text",
-        detect:"Detect AI",
-        copy:"Copy",
-        clear:"Clear",
-        placeholder:"Paste text...",
-        score:"AI Score",
-        improved:"Improved Text"
+async function improve(){
+
+    let text = textEl.value;
+    if(text.length < 5) return;
+
+    document.getElementById("resultCard").style.display = "block";
+    document.getElementById("title").innerText = "Thinking...";
+
+    try {
+
+        let res = await fetch("https://YOUR-SERVER.DE/humanize", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text })
+        });
+
+        let data = await res.json();
+
+        document.getElementById("split").style.display = "grid";
+        document.getElementById("before").innerText = text;
+        document.getElementById("after").innerText = data.result;
+
+        document.getElementById("title").innerText = "AI Improved Text";
+
+    } catch (e) {
+        document.getElementById("title").innerText = "Error (server not reachable)";
     }
-};
-
-function renderUI(){
-
-    document.getElementById("subtitle").innerText = T[lang].subtitle;
-
-    document.getElementById("text").placeholder = T[lang].placeholder;
-
-    document.getElementById("btnImprove").innerText = "✨ " + T[lang].improve;
-    document.getElementById("btnDetect").innerText = T[lang].detect;
-    document.getElementById("btnCopy").innerText = T[lang].copy;
-    document.getElementById("btnClear").innerText = T[lang].clear;
-
-    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
 }
-
-function toggleLang(){
-    lang = lang === "ru" ? "en" : "ru";
-    renderUI();
-}
-
-function clearText(){
-    textEl.value = "";
-    document.getElementById("resultCard").style.display = "none";
-}
-
-function copyText(){
-    navigator.clipboard.writeText(textEl.value);
-}
-
-function detect(){
-
-    let text = textEl.value;
-    if(text.length < 5) return;
-
-    let score = 50;
-
-    ["however","moreover","furthermore"].forEach(w=>{
-        if(text.toLowerCase().includes(w)) score += 10;
-    });
-
-    document.getElementById("resultCard").style.display = "block";
-    document.getElementById("split").style.display = "none";
-
-    document.getElementById("title").innerText = T[lang].score;
-    document.getElementById("result").innerText = score + "%";
-}
-
-function improve(){
-
-    let text = textEl.value;
-    if(text.length < 5) return;
-
-    let improved = text
-        .replace(/however/gi,"но")
-        .replace(/moreover/gi,"и к тому же")
-        .replace(/furthermore/gi,"и ещё");
-
-    document.getElementById("resultCard").style.display = "block";
-    document.getElementById("title").innerText = T[lang].improved;
-
-    document.getElementById("split").style.display = "grid";
-    document.getElementById("before").innerText = text;
-    document.getElementById("after").innerText = improved;
-}
-
-renderUI();
 
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
