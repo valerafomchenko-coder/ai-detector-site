@@ -3,103 +3,126 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Humanly AI 3.1</title>
+<title>Humanly AI 3.2</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    text-align: center;
+:root{
+    --bg:#0b1220;
+    --card:#111a2e;
+    --text:#ffffff;
+    --muted:#94a3b8;
+    --primary:#3b82f6;
+    --danger:#ef4444;
+    --green:#22c55e;
 }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 30px;
+body.light{
+    --bg:#f1f5f9;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#475569;
 }
 
-h1 {
-    font-size: 42px;
+body{
+    margin:0;
+    font-family:Arial;
+    background:var(--bg);
+    color:var(--text);
+    transition:0.3s;
 }
 
-textarea {
-    width: 100%;
-    height: 180px;
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    background: #1e293b;
-    color: white;
-    font-size: 16px;
-    outline: none;
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:30px;
 }
 
-button {
-    margin: 10px 5px 0 5px;
-    padding: 12px 18px;
-    border: none;
-    border-radius: 10px;
-    background: #3b82f6;
-    color: white;
-    font-size: 15px;
-    cursor: pointer;
+h1{
+    font-size:40px;
+    margin-bottom:5px;
 }
 
-button:hover {
-    opacity: 0.9;
+.small{
+    color:var(--muted);
+    font-size:14px;
 }
 
-.card {
-    margin-top: 20px;
-    padding: 20px;
-    background: #1e293b;
-    border-radius: 12px;
+textarea{
+    width:100%;
+    height:180px;
+    margin-top:20px;
+    padding:15px;
+    border-radius:12px;
+    border:none;
+    background:var(--card);
+    color:var(--text);
+    font-size:15px;
+    outline:none;
+    resize:none;
 }
 
-.small {
-    color: #94a3b8;
-    font-size: 14px;
-    margin-top: 10px;
+.panel{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:12px;
 }
 
-.bar {
-    height: 10px;
-    background: #334155;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 10px;
+button{
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:var(--primary);
+    color:white;
+    font-size:14px;
 }
 
-.fill {
-    height: 10px;
-    width: 0%;
-    background: #22c55e;
-    transition: 0.4s;
+button.secondary{ background:#334155; }
+button.danger{ background:var(--danger); }
+
+.card{
+    margin-top:20px;
+    padding:20px;
+    background:var(--card);
+    border-radius:12px;
 }
 
-.tabs {
-    margin-top: 20px;
+.bar{
+    height:10px;
+    background:#334155;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:10px;
 }
 
-.tab {
-    display: inline-block;
-    padding: 10px 15px;
-    margin: 5px;
-    background: #1e293b;
-    border-radius: 8px;
-    cursor: pointer;
+.fill{
+    height:10px;
+    width:0%;
+    background:var(--green);
+    transition:0.4s;
 }
 
-.tab.active {
-    background: #3b82f6;
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
-.controls {
-    margin-top: 10px;
+.toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#000;
+    color:white;
+    padding:10px 16px;
+    border-radius:10px;
+    opacity:0;
+    transition:0.3s;
 }
+.toast.show{ opacity:1; }
+
 </style>
 </head>
 
@@ -107,23 +130,24 @@ button:hover {
 
 <div class="container">
 
-<h1 id="title">Humanly AI 3.1</h1>
-<p class="small" id="subtitle">AI Text Detector + Humanizer</p>
+<div class="topbar">
+    <div>
+        <h1>Humanly AI 3.2</h1>
+        <div class="small">AI Detector + Humanizer</div>
+    </div>
 
-<div class="tabs">
-    <div class="tab active" onclick="setMode('detect', event)">Detect AI</div>
-    <div class="tab" onclick="setMode('humanize', event)">Humanize</div>
+    <button class="secondary" onclick="toggleTheme()">🌙</button>
 </div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
 
-<div class="small" id="counter">Символов: 0 | Слов: 0</div>
+<div class="small" id="counter">0 символов | 0 слов</div>
 
-<div class="controls">
-    <button onclick="run()" id="btnRun">Analyze</button>
-    <button onclick="clearText()" id="btnClear">Очистить</button>
-    <button onclick="copyResult()" id="btnCopy">Копировать</button>
-    <button onclick="toggleLang()" id="btnLang">EN</button>
+<div class="panel">
+    <button onclick="run()">Analyze</button>
+    <button class="danger" onclick="clearText()">Очистить</button>
+    <button class="secondary" onclick="copyResult()">Копировать</button>
+    <button class="secondary" onclick="pasteText()">Вставить</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
@@ -134,151 +158,92 @@ button:hover {
 
 </div>
 
-<script>
+<div class="toast" id="toast">OK</div>
 
-let mode = "detect";
-let lang = "ru";
+<script>
 
 const textarea = document.getElementById("text");
 
 textarea.addEventListener("input", updateCounter);
 
-function setMode(m, event) {
-    mode = m;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    event.target.classList.add("active");
-}
-
-function updateCounter() {
+function updateCounter(){
     let text = textarea.value;
 
     let chars = text.length;
-
-    let words = text.trim()
-        ? text.trim().split(/\s+/).length
-        : 0;
+    let words = text.trim() ? text.trim().split(/\s+/).length : 0;
 
     document.getElementById("counter").innerText =
-        lang === "ru"
-        ? `Символов: ${chars} | Слов: ${words}`
-        : `Chars: ${chars} | Words: ${words}`;
+        `${chars} символов | ${words} слов`;
 }
 
-function clearText() {
+function showToast(msg){
+    let t = document.getElementById("toast");
+    t.innerText = msg;
+    t.classList.add("show");
+
+    setTimeout(()=> t.classList.remove("show"), 1500);
+}
+
+function clearText(){
     textarea.value = "";
     document.getElementById("resultCard").style.display = "none";
     updateCounter();
+    showToast("Очищено");
 }
 
-function copyResult() {
+function copyResult(){
     let text = document.getElementById("resultText").innerText;
     navigator.clipboard.writeText(text);
+    showToast("Скопировано");
 }
 
-function toggleLang() {
-    lang = lang === "ru" ? "en" : "ru";
-
-    document.getElementById("title").innerText =
-        lang === "ru" ? "Humanly AI 3.1" : "Humanly AI 3.1";
-
-    document.getElementById("subtitle").innerText =
-        lang === "ru"
-        ? "AI Text Detector + Humanizer"
-        : "AI Text Detector + Humanizer Tool";
-
-    document.getElementById("btnRun").innerText =
-        lang === "ru" ? "Analyze" : "Run";
-
-    document.getElementById("btnClear").innerText =
-        lang === "ru" ? "Очистить" : "Clear";
-
-    document.getElementById("btnCopy").innerText =
-        lang === "ru" ? "Копировать" : "Copy";
-
-    document.getElementById("btnLang").innerText =
-        lang === "ru" ? "EN" : "RU";
-
-    updateCounter();
+function pasteText(){
+    navigator.clipboard.readText().then(t=>{
+        textarea.value = t;
+        updateCounter();
+        showToast("Вставлено");
+    });
 }
 
-function analyzeText(text) {
+function toggleTheme(){
+    document.body.classList.toggle("light");
+}
 
+function analyze(text){
     let score = 50;
 
-    const aiPhrases = [
-        "however", "moreover", "in conclusion",
-        "it is important to note", "furthermore"
-    ];
+    const bad = ["however","moreover","in conclusion","furthermore"];
 
-    aiPhrases.forEach(p => {
-        if (text.toLowerCase().includes(p)) score += 8;
+    bad.forEach(p=>{
+        if(text.toLowerCase().includes(p)) score += 8;
     });
-
-    let sentences = text.split(".");
-    let avgLen = text.length / (sentences.length || 1);
-
-    if (avgLen > 120) score += 10;
-    if (avgLen < 40) score -= 5;
 
     let words = text.toLowerCase().split(/\s+/);
     let unique = new Set(words);
+
     let diversity = unique.size / words.length;
 
-    if (diversity < 0.55) score += 15;
+    if(diversity < 0.55) score += 15;
 
-    if (score > 95) score = 95;
-    if (score < 5) score = 5;
+    let avg = text.length / (text.split(".").length || 1);
+    if(avg > 120) score += 10;
 
-    return Math.round(score);
+    return Math.max(5, Math.min(95, Math.round(score)));
 }
 
-function humanizeText(text) {
-
-    return text
-        .replace(/however/gi, "но")
-        .replace(/moreover/gi, "к тому же")
-        .replace(/in conclusion/gi, "в итоге")
-        .replace(/it is important to note/gi, "важно понимать что")
-        .replace(/furthermore/gi, "и ещё")
-        + "\n\n(переписано в более естественном стиле)";
-}
-
-function run() {
-
+function run(){
     let text = textarea.value;
+    if(text.length < 10) return;
 
-    if (text.length < 10) return;
+    let score = analyze(text);
 
-    let resultCard = document.getElementById("resultCard");
-    resultCard.style.display = "block";
+    document.getElementById("resultCard").style.display = "block";
+    document.getElementById("resultTitle").innerText = "AI Score";
+    document.getElementById("resultText").innerText = score + "% AI-like";
 
-    if (mode === "detect") {
-
-        let score = analyzeText(text);
-
-        document.getElementById("resultTitle").innerText =
-            lang === "ru" ? "AI вероятность" : "AI Probability";
-
-        document.getElementById("resultText").innerText =
-            score + "% AI-like text";
-
-        document.getElementById("fill").style.width = score + "%";
-        document.getElementById("fill").style.background =
-            score > 70 ? "#ef4444" : "#22c55e";
-    }
-
-    if (mode === "humanize") {
-
-        let result = humanizeText(text);
-
-        document.getElementById("resultTitle").innerText =
-            lang === "ru" ? "Результат" : "Humanized Text";
-
-        document.getElementById("resultText").innerText = result;
-
-        document.getElementById("fill").style.width = "100%";
-        document.getElementById("fill").style.background = "#3b82f6";
-    }
+    let fill = document.getElementById("fill");
+    fill.style.width = score + "%";
+    fill.style.background = score > 70 ? "var(--danger)" : "var(--green)";
 }
 
 updateCounter();
