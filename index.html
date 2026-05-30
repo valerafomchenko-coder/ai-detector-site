@@ -123,6 +123,10 @@ button.danger{ background:var(--danger); }
 }
 .toast.show{ opacity:1; }
 
+.lang{
+    margin-left:10px;
+    background:#334155;
+}
 </style>
 </head>
 
@@ -132,11 +136,14 @@ button.danger{ background:var(--danger); }
 
 <div class="topbar">
     <div>
-        <h1>Humanly AI 3.2</h1>
-        <div class="small">AI Detector + Humanizer</div>
+        <h1 id="title">Humanly AI 3.2</h1>
+        <div class="small" id="subtitle">AI Detector + Humanizer</div>
     </div>
 
-    <button class="secondary" onclick="toggleTheme()">🌙</button>
+    <div>
+        <button class="secondary" onclick="toggleTheme()">🌙</button>
+        <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
+    </div>
 </div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
@@ -144,10 +151,10 @@ button.danger{ background:var(--danger); }
 <div class="small" id="counter">0 символов | 0 слов</div>
 
 <div class="panel">
-    <button onclick="run()">Analyze</button>
-    <button class="danger" onclick="clearText()">Очистить</button>
-    <button class="secondary" onclick="copyResult()">Копировать</button>
-    <button class="secondary" onclick="pasteText()">Вставить</button>
+    <button onclick="run()" id="btnAnalyze">Analyze</button>
+    <button class="danger" onclick="clearText()" id="btnClear">Очистить</button>
+    <button class="secondary" onclick="copyResult()" id="btnCopy">Копировать</button>
+    <button class="secondary" onclick="pasteText()" id="btnPaste">Вставить</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
@@ -162,46 +169,90 @@ button.danger{ background:var(--danger); }
 
 <script>
 
+let lang = "ru";
 const textarea = document.getElementById("text");
 
 textarea.addEventListener("input", updateCounter);
 
+const t = {
+    ru:{
+        placeholder:"Вставь текст...",
+        analyze:"Анализ",
+        clear:"Очистить",
+        copy:"Копировать",
+        paste:"Вставить",
+        result:"AI вероятность",
+        toastCopy:"Скопировано",
+        toastClear:"Очищено",
+        toastPaste:"Вставлено",
+        counter:(c,w)=>`${c} символов | ${w} слов`,
+        subtitle:"AI Detector + Humanizer"
+    },
+    en:{
+        placeholder:"Paste text...",
+        analyze:"Analyze",
+        clear:"Clear",
+        copy:"Copy",
+        paste:"Paste",
+        result:"AI Score",
+        toastCopy:"Copied",
+        toastClear:"Cleared",
+        toastPaste:"Pasted",
+        counter:(c,w)=>`${c} chars | ${w} words`,
+        subtitle:"AI Detector + Humanizer Tool"
+    }
+};
+
+function setUI(){
+    textarea.placeholder = t[lang].placeholder;
+    document.getElementById("btnAnalyze").innerText = t[lang].analyze;
+    document.getElementById("btnClear").innerText = t[lang].clear;
+    document.getElementById("btnCopy").innerText = t[lang].copy;
+    document.getElementById("btnPaste").innerText = t[lang].paste;
+    document.getElementById("subtitle").innerText = t[lang].subtitle;
+}
+
+function toggleLang(){
+    lang = lang === "ru" ? "en" : "ru";
+    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
+    setUI();
+    updateCounter();
+}
+
 function updateCounter(){
     let text = textarea.value;
-
     let chars = text.length;
     let words = text.trim() ? text.trim().split(/\s+/).length : 0;
 
     document.getElementById("counter").innerText =
-        `${chars} символов | ${words} слов`;
+        t[lang].counter(chars, words);
 }
 
 function showToast(msg){
-    let t = document.getElementById("toast");
-    t.innerText = msg;
-    t.classList.add("show");
-
-    setTimeout(()=> t.classList.remove("show"), 1500);
+    let toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.classList.add("show");
+    setTimeout(()=>toast.classList.remove("show"),1500);
 }
 
 function clearText(){
     textarea.value = "";
     document.getElementById("resultCard").style.display = "none";
     updateCounter();
-    showToast("Очищено");
+    showToast(t[lang].toastClear);
 }
 
 function copyResult(){
     let text = document.getElementById("resultText").innerText;
     navigator.clipboard.writeText(text);
-    showToast("Скопировано");
+    showToast(t[lang].toastCopy);
 }
 
 function pasteText(){
-    navigator.clipboard.readText().then(t=>{
-        textarea.value = t;
+    navigator.clipboard.readText().then(txt=>{
+        textarea.value = txt;
         updateCounter();
-        showToast("Вставлено");
+        showToast(t[lang].toastPaste);
     });
 }
 
@@ -238,7 +289,8 @@ function run(){
     let score = analyze(text);
 
     document.getElementById("resultCard").style.display = "block";
-    document.getElementById("resultTitle").innerText = "AI Score";
+    document.getElementById("resultTitle").innerText = t[lang].result;
+
     document.getElementById("resultText").innerText = score + "% AI-like";
 
     let fill = document.getElementById("fill");
@@ -246,6 +298,7 @@ function run(){
     fill.style.background = score > 70 ? "var(--danger)" : "var(--green)";
 }
 
+setUI();
 updateCounter();
 
 </script>
