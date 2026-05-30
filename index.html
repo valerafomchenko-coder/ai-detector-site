@@ -6,22 +6,11 @@
 <title>Humanly AI</title>
 
 <style>
-:root{
-    --bg:#0b1220;
-    --card:#111a2e;
-    --text:#ffffff;
-    --muted:#94a3b8;
-    --primary:#3b82f6;
-    --danger:#ef4444;
-    --green:#22c55e;
-    --yellow:#f59e0b;
-}
-
 body{
     margin:0;
     font-family:Arial;
-    background:var(--bg);
-    color:var(--text);
+    background:#0b1220;
+    color:white;
 }
 
 .container{
@@ -34,26 +23,16 @@ body{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:10px;
 }
 
 h1{
-    font-size:34px;
     margin:0;
+    font-size:34px;
 }
 
 .small{
-    color:var(--muted);
+    color:#94a3b8;
     font-size:14px;
-}
-
-.lang{
-    background:#334155;
-    border:none;
-    color:white;
-    padding:8px 12px;
-    border-radius:8px;
-    cursor:pointer;
 }
 
 textarea{
@@ -63,8 +42,8 @@ textarea{
     padding:15px;
     border-radius:12px;
     border:none;
-    background:var(--card);
-    color:var(--text);
+    background:#111a2e;
+    color:white;
     font-size:15px;
     outline:none;
 }
@@ -86,55 +65,33 @@ button{
     font-size:14px;
 }
 
-button.primary{
-    background:var(--primary);
-}
-
-button.danger{
-    background:var(--danger);
-}
+.primary{ background:#3b82f6; }
+.danger{ background:#ef4444; }
 
 .card{
     margin-top:20px;
     padding:20px;
-    background:var(--card);
+    background:#111a2e;
     border-radius:12px;
-}
-
-.bar{
-    height:10px;
-    background:#334155;
-    border-radius:10px;
-    overflow:hidden;
-    margin-top:10px;
-}
-
-.fill{
-    height:10px;
-    width:0%;
-    background:var(--green);
-    transition:0.3s;
 }
 
 .split{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
-    margin-top:15px;
+    margin-top:10px;
 }
 
 .box{
     background:rgba(255,255,255,0.05);
     padding:10px;
     border-radius:10px;
-    font-size:13px;
     white-space:pre-wrap;
+    font-size:13px;
 }
 
-.insights{
-    margin-top:12px;
-    color:var(--muted);
-    font-size:13px;
+.lang{
+    background:#475569;
 }
 </style>
 </head>
@@ -145,34 +102,31 @@ button.danger{
 
 <div class="header">
     <div>
-        <h1 id="title">Humanly AI</h1>
-        <div class="small" id="subtitle">AI writing assistant</div>
+        <h1>Humanly AI</h1>
+        <div class="small" id="subtitle">AI writing tool</div>
     </div>
 
     <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
 </div>
 
-<textarea id="text" placeholder="Paste text..."></textarea>
+<textarea id="text" placeholder=""></textarea>
 
 <div class="panel">
-    <button class="primary" onclick="improve()">✨ Improve Text</button>
-    <button onclick="detect()">Detect AI</button>
-    <button onclick="copyText()">Copy</button>
-    <button onclick="clearText()" class="danger">Clear</button>
+    <button class="primary" onclick="improve()" id="btnImprove"></button>
+    <button onclick="detect()" id="btnDetect"></button>
+    <button onclick="copyText()" id="btnCopy"></button>
+    <button class="danger" onclick="clearText()" id="btnClear"></button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
-
-    <h2 id="resultTitle"></h2>
-
-    <div class="bar"><div class="fill" id="fill"></div></div>
+    <h2 id="title"></h2>
 
     <div class="split" id="split" style="display:none;">
         <div class="box" id="before"></div>
         <div class="box" id="after"></div>
     </div>
 
-    <div class="insights" id="insights"></div>
+    <div id="result"></div>
 </div>
 
 </div>
@@ -184,35 +138,44 @@ const textEl = document.getElementById("text");
 
 const T = {
     ru:{
-        subtitle:"AI помощник для улучшения текста",
+        subtitle:"AI инструмент для улучшения текста",
         improve:"Улучшить текст",
-        detect:"Проверка на ИИ",
-        copy:"Скопировано",
-        clear:"Очищено",
+        detect:"Проверить AI",
+        copy:"Копировать",
+        clear:"Очистить",
         placeholder:"Вставь текст...",
-        no:"Нет явных AI признаков"
+        score:"AI вероятность",
+        improved:"Улучшенный текст"
     },
     en:{
-        subtitle:"AI writing assistant",
+        subtitle:"AI writing tool",
         improve:"Improve Text",
-        detect:"AI Detection",
-        copy:"Copied",
-        clear:"Cleared",
+        detect:"Detect AI",
+        copy:"Copy",
+        clear:"Clear",
         placeholder:"Paste text...",
-        no:"No strong AI signals"
+        score:"AI Score",
+        improved:"Improved Text"
     }
 };
 
-function toggleLang(){
-
-    lang = lang === "ru" ? "en" : "ru";
+function renderUI(){
 
     document.getElementById("subtitle").innerText = T[lang].subtitle;
+
     document.getElementById("text").placeholder = T[lang].placeholder;
 
-    document.querySelector(".primary").innerText = "✨ " + T[lang].improve;
-    document.querySelectorAll("button")[1].innerText = T[lang].detect;
+    document.getElementById("btnImprove").innerText = "✨ " + T[lang].improve;
+    document.getElementById("btnDetect").innerText = T[lang].detect;
+    document.getElementById("btnCopy").innerText = T[lang].copy;
+    document.getElementById("btnClear").innerText = T[lang].clear;
 
+    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
+}
+
+function toggleLang(){
+    lang = lang === "ru" ? "en" : "ru";
+    renderUI();
 }
 
 function clearText(){
@@ -222,7 +185,6 @@ function clearText(){
 
 function copyText(){
     navigator.clipboard.writeText(textEl.value);
-    alert(T[lang].copy);
 }
 
 function detect(){
@@ -231,28 +193,16 @@ function detect(){
     if(text.length < 5) return;
 
     let score = 50;
-    let reasons = [];
-
-    let lower = text.toLowerCase();
 
     ["however","moreover","furthermore"].forEach(w=>{
-        if(lower.includes(w)){
-            score += 10;
-            reasons.push(w);
-        }
+        if(text.toLowerCase().includes(w)) score += 10;
     });
 
-    let words = lower.split(/\s+/);
-    let unique = new Set(words);
+    document.getElementById("resultCard").style.display = "block";
+    document.getElementById("split").style.display = "none";
 
-    if(unique.size / words.length < 0.55){
-        score += 15;
-        reasons.push("repetition");
-    }
-
-    score = Math.max(5, Math.min(95, Math.round(score)));
-
-    showResult("AI Score", score + "%", reasons);
+    document.getElementById("title").innerText = T[lang].score;
+    document.getElementById("result").innerText = score + "%";
 }
 
 function improve(){
@@ -265,37 +215,15 @@ function improve(){
         .replace(/moreover/gi,"и к тому же")
         .replace(/furthermore/gi,"и ещё");
 
-    showSplit("Improved Text", text, improved);
-}
-
-function showResult(title, value, reasons){
-
-    let card = document.getElementById("resultCard");
-    card.style.display = "block";
-
-    document.getElementById("split").style.display = "none";
-
-    document.getElementById("resultTitle").innerText = title;
-    document.getElementById("fill").style.width = parseInt(value) + "%";
-
-    document.getElementById("insights").innerText =
-        reasons.length ? reasons.join(", ") : T[lang].no;
-}
-
-function showSplit(title, before, after){
-
-    let card = document.getElementById("resultCard");
-    card.style.display = "block";
-
-    document.getElementById("resultTitle").innerText = title;
+    document.getElementById("resultCard").style.display = "block";
+    document.getElementById("title").innerText = T[lang].improved;
 
     document.getElementById("split").style.display = "grid";
-    document.getElementById("before").innerText = before;
-    document.getElementById("after").innerText = after;
-
-    document.getElementById("fill").style.width = "100%";
-    document.getElementById("insights").innerText = "";
+    document.getElementById("before").innerText = text;
+    document.getElementById("after").innerText = improved;
 }
+
+renderUI();
 
 </script>
 
