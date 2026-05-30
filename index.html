@@ -77,6 +77,10 @@ button.active{
 
 button.danger{ background:var(--danger); }
 
+.lang{
+    background:#475569;
+}
+
 .card{
     margin-top:20px;
     padding:20px;
@@ -114,8 +118,14 @@ button.danger{ background:var(--danger); }
 
 <div class="container">
 
-<h1>Humanly AI 3.5</h1>
-<div class="small">AI Text Tool — Detect • Humanize • Improve</div>
+<div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1 id="title">Humanly AI 3.5</h1>
+        <div class="small" id="subtitle">AI Text Tool — Detect • Humanize • Improve</div>
+    </div>
+
+    <button class="lang" onclick="toggleLang()" id="langBtn">EN</button>
+</div>
 
 <textarea id="text" placeholder="Вставь текст..."></textarea>
 
@@ -123,11 +133,11 @@ button.danger{ background:var(--danger); }
     <button id="b1" onclick="setMode('detect', this)">Detect AI</button>
     <button id="b2" onclick="setMode('humanize', this)">Humanize</button>
     <button id="b3" onclick="setMode('improve', this)">Improve</button>
-    <button class="danger" onclick="clearText()">Clear</button>
+    <button class="danger" onclick="clearText()" id="clearBtn">Очистить</button>
 </div>
 
 <div class="card" id="resultCard" style="display:none;">
-    <h2 id="title"></h2>
+    <h2 id="resTitle"></h2>
     <div class="bar"><div class="fill" id="fill"></div></div>
     <p id="result"></p>
     <div class="insights" id="insights"></div>
@@ -138,13 +148,53 @@ button.danger{ background:var(--danger); }
 <script>
 
 let mode = "detect";
+let lang = "ru";
+
 const textarea = document.getElementById("text");
+
+const t = {
+    ru:{
+        subtitle:"AI Text Tool — Анализ • Очеловечивание • Улучшение",
+        clear:"Очистить",
+        detect:"AI вероятность",
+        humanized:"Очеловеченный текст",
+        improved:"Улучшенный текст",
+        no:"Нет явных AI признаков",
+        insight:"Разбор:"
+    },
+    en:{
+        subtitle:"AI Text Tool — Detect • Humanize • Improve",
+        clear:"Clear",
+        detect:"AI Score",
+        humanized:"Humanized Text",
+        improved:"Improved Text",
+        no:"No strong AI signals",
+        insight:"Analysis:"
+    }
+};
+
+function toggleLang(){
+
+    lang = lang === "ru" ? "en" : "ru";
+
+    document.getElementById("langBtn").innerText = lang === "ru" ? "EN" : "RU";
+
+    document.getElementById("subtitle").innerText = t[lang].subtitle;
+    document.getElementById("clearBtn").innerText = t[lang].clear;
+
+    setMode(mode, document.querySelector(".active"));
+}
 
 function setMode(m, el){
 
     mode = m;
 
-    document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll("button").forEach(b=>{
+        if(!b.classList.contains("lang") && !b.classList.contains("danger")){
+            b.classList.remove("active");
+        }
+    });
+
     el.classList.add("active");
 
     run();
@@ -173,7 +223,6 @@ function analyze(text){
 
     let words = lower.split(/\s+/);
     let unique = new Set(words);
-
     let diversity = unique.size / words.length;
 
     if(diversity < 0.55){
@@ -194,7 +243,6 @@ function analyze(text){
 }
 
 function humanize(text){
-
     return text
         .replace(/however/gi,"но")
         .replace(/moreover/gi,"к тому же")
@@ -203,13 +251,7 @@ function humanize(text){
 }
 
 function improve(text){
-
-    return text
-        .replace(/however/gi,"но")
-        .replace(/moreover/gi,"к тому же")
-        .replace(/furthermore/gi,"и ещё")
-        .replace(/in conclusion/gi,"в итоге")
-        + "\n\n(улучшено по стилю)";
+    return humanize(text) + "\n\n(optimized style)";
 }
 
 function run(){
@@ -217,10 +259,10 @@ function run(){
     let text = textarea.value;
     if(text.length < 5) return;
 
-    let resultCard = document.getElementById("resultCard");
-    resultCard.style.display = "block";
+    let card = document.getElementById("resultCard");
+    card.style.display = "block";
 
-    let title = document.getElementById("title");
+    let rTitle = document.getElementById("resTitle");
     let result = document.getElementById("result");
     let fill = document.getElementById("fill");
     let insights = document.getElementById("insights");
@@ -229,7 +271,7 @@ function run(){
 
         let r = analyze(text);
 
-        title.innerText = "AI Score";
+        rTitle.innerText = t[lang].detect;
         result.innerText = r.score + "% AI-like";
 
         fill.style.width = r.score + "%";
@@ -237,33 +279,29 @@ function run(){
 
         insights.innerHTML = r.reasons.length
             ? "• " + r.reasons.join("<br>• ")
-            : "No strong AI signals";
+            : t[lang].no;
     }
 
     if(mode === "humanize"){
 
-        let out = humanize(text);
-
-        title.innerText = "Humanized Text";
-        result.innerText = out;
+        rTitle.innerText = t[lang].humanized;
+        result.innerText = humanize(text);
 
         fill.style.width = "100%";
         fill.style.background = "var(--yellow)";
 
-        insights.innerHTML = "Simplified & made more natural";
+        insights.innerText = t[lang].insight;
     }
 
     if(mode === "improve"){
 
-        let out = improve(text);
-
-        title.innerText = "Improved Text";
-        result.innerText = out;
+        rTitle.innerText = t[lang].improved;
+        result.innerText = improve(text);
 
         fill.style.width = "100%";
         fill.style.background = "var(--primary)";
 
-        insights.innerHTML = "Style optimized + AI markers reduced";
+        insights.innerText = t[lang].insight;
     }
 }
 
